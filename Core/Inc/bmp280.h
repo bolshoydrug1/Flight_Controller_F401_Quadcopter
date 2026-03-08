@@ -80,6 +80,11 @@ extern "C" {
 #define BMP280_MEAS_TIME_HIGH        20  // ×8
 #define BMP280_MEAS_TIME_ULTRA_HIGH  38  // ×16
 
+// Среднее давление на уровне моря для юга России (г. Краснодар и окрестности)
+// 760 мм.рт.ст = 1013.25 гПа = стандартное атмосферное давление
+// Для юга России характерно slightly повышенное давление ~765 мм.рт.ст
+#define  SEA_LEVEL_PRESSURE			765.0f  // мм.рт.ст
+
 /* Type Definitions ----------------------------------------------------------*/
 // Структура для хранения калибровочных коэффициентов
 typedef struct {
@@ -105,17 +110,19 @@ typedef struct {
 
 // Структура для хранения скомпенсированных данных
 typedef struct {
-    int32_t temperature;  // Температура в градусах Цельсия * 100 (2345 = 23.45°C)
-    uint32_t pressure;     // Давление в Паскалях (101325 = 1013.25 гПа)
+    float temperature;  // Температура в градусах Цельсия (°C)
+    float pressure;     // Давление в мм.рт.ст
+    float Altitude;     // Высота над уровнем моря (м)
+    float relative_height; // высота от точки начала движения (м)
 } BMP280_CompensatedData;
 
 // Структура объекта BMP280
 typedef struct {
+	uint32_t first_pressure_pa;
     SPI_HandleTypeDef* hspi;        // Указатель на SPI
     GPIO_TypeDef* cs_port;           // Порт для CS (CSB)
     uint16_t cs_pin;                  // Пин для CS (CSB)
     BMP280_CalibData calib;           // Калибровочные данные
-    BMP280_RawData raw_data;
     BMP280_CompensatedData data;      // Последние скомпенсированные данные
     uint8_t ctrl_meas_reg;            // Текущее значение CTRL_MEAS
     uint8_t config_reg;               // Текущее значение CONFIG
@@ -126,18 +133,12 @@ typedef struct {
 HAL_StatusTypeDef BMP280_Init(BMP280_HandleTypeDef* bmp280);
 HAL_StatusTypeDef BMP280_ReadID(BMP280_HandleTypeDef* bmp280, uint8_t* id);
 HAL_StatusTypeDef BMP280_SoftReset(BMP280_HandleTypeDef* bmp280);
-HAL_StatusTypeDef BMP280_ReadCalibrationData(BMP280_HandleTypeDef* bmp280);
 HAL_StatusTypeDef BMP280_SetConfig(BMP280_HandleTypeDef* bmp280, uint8_t config);
+HAL_StatusTypeDef BMP280_ForcedMeasurement(BMP280_HandleTypeDef* bmp280);
 HAL_StatusTypeDef BMP280_SetCtrlMeas(BMP280_HandleTypeDef* bmp280, uint8_t ctrl_meas);
-HAL_StatusTypeDef BMP280_ReadRawData(BMP280_HandleTypeDef* bmp280, BMP280_RawData* raw);
-HAL_StatusTypeDef BMP280_CompensateData(BMP280_HandleTypeDef* bmp280, BMP280_RawData* raw, BMP280_CompensatedData* comp);
 HAL_StatusTypeDef BMP280_GetMeasuredData(BMP280_HandleTypeDef* bmp280);
 
-// Утилиты
-HAL_StatusTypeDef BMP280_ForcedMeasurement(BMP280_HandleTypeDef* bmp280);
-float BMP280_GetTemperature_C(BMP280_HandleTypeDef* bmp280);
-float BMP280_GetPressure_hPa(BMP280_HandleTypeDef* bmp280);
-float BMP280_GetAltitude_m(BMP280_HandleTypeDef* bmp280, float sea_level_pressure_hPa);
+
 
 #ifdef __cplusplus
 }

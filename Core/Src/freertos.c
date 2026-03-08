@@ -174,13 +174,12 @@ void Start_BMP280_Task(void *argument)
 {
   /* USER CODE BEGIN Start_BMP280_Task */
 	BMP280_Init(&bmp1);
-	BMP280_ReadCalibrationData(&bmp1);
   /* Infinite loop */
   for(;;)
   {
-	  BMP280_ReadRawData(&bmp1, &bmp1.raw_data);
-	  BMP280_CompensateData(&bmp1, &bmp1.raw_data, &bmp1.data);
-	  osDelay(1);
+	  BMP280_GetMeasuredData(&bmp1);
+
+	  osDelay(50);
   }
   /* USER CODE END Start_BMP280_Task */
 }
