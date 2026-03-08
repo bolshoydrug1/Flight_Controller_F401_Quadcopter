@@ -25,7 +25,7 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include "bmp280.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -46,7 +46,7 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
-
+BMP280_HandleTypeDef bmp1;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -94,7 +94,9 @@ int main(void)
   MX_I2C2_Init();
   MX_SPI1_Init();
   /* USER CODE BEGIN 2 */
-
+  bmp1.hspi = &hspi1;
+  bmp1.cs_pin = BMP280_SS_Pin;
+  bmp1.cs_port = BMP280_SS_GPIO_Port;
   /* USER CODE END 2 */
 
   /* Init scheduler */

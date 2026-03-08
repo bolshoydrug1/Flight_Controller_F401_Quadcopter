@@ -59,7 +59,7 @@ void Error_Handler(void);
 /* Private defines -----------------------------------------------------------*/
 #define LED_1_Pin GPIO_PIN_13
 #define LED_1_GPIO_Port GPIOC
-#define BMP280_SS_Pin GPIO_PIN_1
+#define BMP280_SS_Pin GPIO_PIN_14
 #define BMP280_SS_GPIO_Port GPIOC
 
 /* USER CODE BEGIN Private defines */
