@@ -26,6 +26,7 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "bmp280.h"
+#include "VL53L0X.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -45,7 +46,22 @@
 
 /* Private variables ---------------------------------------------------------*/
 /* USER CODE BEGIN Variables */
+//===============BMP280===================
 extern BMP280_HandleTypeDef bmp1;
+
+//===============VL53L0====================
+uint32_t refSpadCount;
+uint8_t isApertureSpads;
+uint8_t VhvSettings;
+uint8_t PhaseCal;
+
+// Флаги состояния
+volatile uint8_t vl53l0x_ready = 0;
+volatile uint8_t vl53l0x_error = 0;
+
+
+statInfo_t_VL53L0X distanceStr;
+uint16_t distance;
 /* USER CODE END Variables */
 /* Definitions for defaultTask */
 osThreadId_t defaultTaskHandle;
@@ -68,6 +84,13 @@ const osThreadAttr_t BMP280_Task_attributes = {
   .stack_size = 128 * 4,
   .priority = (osPriority_t) osPriorityNormal,
 };
+/* Definitions for VL53L0_Task */
+osThreadId_t VL53L0_TaskHandle;
+const osThreadAttr_t VL53L0_Task_attributes = {
+  .name = "VL53L0_Task",
+  .stack_size = 128 * 4,
+  .priority = (osPriority_t) osPriorityNormal,
+};
 
 /* Private function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN FunctionPrototypes */
@@ -77,6 +100,7 @@ const osThreadAttr_t BMP280_Task_attributes = {
 void StartDefaultTask(void *argument);
 void Start_MPU6050_task(void *argument);
 void Start_BMP280_Task(void *argument);
+void Start_VL53L0_Task(void *argument);
 
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
@@ -115,6 +139,9 @@ void MX_FREERTOS_Init(void) {
 
   /* creation of BMP280_Task */
   BMP280_TaskHandle = osThreadNew(Start_BMP280_Task, NULL, &BMP280_Task_attributes);
+
+  /* creation of VL53L0_Task */
+  VL53L0_TaskHandle = osThreadNew(Start_VL53L0_Task, NULL, &VL53L0_Task_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
@@ -174,14 +201,35 @@ void Start_BMP280_Task(void *argument)
 {
   /* USER CODE BEGIN Start_BMP280_Task */
 	BMP280_Init(&bmp1);
+	osDelay(50);
   /* Infinite loop */
   for(;;)
   {
 	  BMP280_GetMeasuredData(&bmp1);
 
-	  osDelay(50);
+	  osDelay(10);
   }
   /* USER CODE END Start_BMP280_Task */
+}
+
+/* USER CODE BEGIN Header_Start_VL53L0_Task */
+/**
+* @brief Function implementing the VL53L0_Task thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_Start_VL53L0_Task */
+void Start_VL53L0_Task(void *argument)
+{
+  /* USER CODE BEGIN Start_VL53L0_Task */
+
+    /* === Основной цикл измерений === */
+    for(;;)
+    {
+    	distance = readRangeSingleMillimeters(&distanceStr);
+        osDelay(50);  // ~20 Гц опроса, можно настроить под ваши нужды
+    }
+  /* USER CODE END Start_VL53L0_Task */
 }
 
 /* Private application code --------------------------------------------------*/

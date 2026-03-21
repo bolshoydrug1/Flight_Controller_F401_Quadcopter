@@ -19,6 +19,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "cmsis_os.h"
+#include "dma.h"
 #include "i2c.h"
 #include "spi.h"
 #include "gpio.h"
@@ -26,6 +27,7 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "bmp280.h"
+#include "VL53L0X.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -46,7 +48,10 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
+//============BMP280===============
 BMP280_HandleTypeDef bmp1;
+
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -90,13 +95,23 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
+  MX_DMA_Init();
   MX_I2C1_Init();
   MX_I2C2_Init();
   MX_SPI1_Init();
+  MX_SPI2_Init();
   /* USER CODE BEGIN 2 */
-  bmp1.hspi = &hspi1;
-  bmp1.cs_pin = BMP280_SS_Pin;
-  bmp1.cs_port = BMP280_SS_GPIO_Port;
+	bmp1.hspi = &hspi1;
+	bmp1.cs_pin = BMP280_SS_Pin;
+	bmp1.cs_port = BMP280_SS_GPIO_Port;
+
+	initVL53L0X(1, &hi2c2);
+	//	Configure the sensor for high accuracy and speed in 20 cm
+	setSignalRateLimit(200);
+	setVcselPulsePeriod(VcselPeriodPreRange, 18);
+	setVcselPulsePeriod(VcselPeriodFinalRange, 14);
+	setMeasurementTimingBudget(66000);
+
   /* USER CODE END 2 */
 
   /* Init scheduler */

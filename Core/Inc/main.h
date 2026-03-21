@@ -61,6 +61,9 @@ void Error_Handler(void);
 #define LED_1_GPIO_Port GPIOC
 #define BMP280_SS_Pin GPIO_PIN_14
 #define BMP280_SS_GPIO_Port GPIOC
+#define VL53L0_INT_Pin GPIO_PIN_0
+#define VL53L0_INT_GPIO_Port GPIOB
+#define VL53L0_INT_EXTI_IRQn EXTI0_IRQn
 
 /* USER CODE BEGIN Private defines */
 
