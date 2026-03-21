@@ -104,12 +104,16 @@ int main(void)
 	bmp1.cs_pin = BMP280_SS_Pin;
 	bmp1.cs_port = BMP280_SS_GPIO_Port;
 
+	HAL_GPIO_WritePin(VL53L0_XSHUT_GPIO_Port, VL53L0_XSHUT_Pin, GPIO_PIN_RESET);
+	HAL_Delay(10);
+	HAL_GPIO_WritePin(VL53L0_XSHUT_GPIO_Port, VL53L0_XSHUT_Pin, GPIO_PIN_SET);
+	HAL_Delay(10);
+
 	initVL53L0X(1, &hi2c2);
-	//	Configure the sensor for high accuracy and speed in 20 cm
 	setSignalRateLimit(50);
-	setVcselPulsePeriod(VcselPeriodPreRange, 12);
+	setVcselPulsePeriod(VcselPeriodPreRange, 14);
 	setVcselPulsePeriod(VcselPeriodFinalRange, 10);
-	setMeasurementTimingBudget(20000);
+	setMeasurementTimingBudget(25000);
 
   /* USER CODE END 2 */
 

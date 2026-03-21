@@ -64,6 +64,8 @@ void Error_Handler(void);
 #define VL53L0_INT_Pin GPIO_PIN_0
 #define VL53L0_INT_GPIO_Port GPIOB
 #define VL53L0_INT_EXTI_IRQn EXTI0_IRQn
+#define VL53L0_XSHUT_Pin GPIO_PIN_1
+#define VL53L0_XSHUT_GPIO_Port GPIOB
 
 /* USER CODE BEGIN Private defines */
 

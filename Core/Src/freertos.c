@@ -231,7 +231,7 @@ void Start_VL53L0_Task(void *argument)
     for(;;)
     {
     	distance = readRangeContinuousMillimeters(&distanceStr);
-        osDelay(50);  // ~20 Гц опроса, можно настроить под ваши нужды
+        osDelay(5);  // ~20 Гц опроса, можно настроить под ваши нужды
     }
   /* USER CODE END Start_VL53L0_Task */
 }

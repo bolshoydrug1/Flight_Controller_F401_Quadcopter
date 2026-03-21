@@ -56,6 +56,9 @@ void MX_GPIO_Init(void)
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(BMP280_SS_GPIO_Port, BMP280_SS_Pin, GPIO_PIN_RESET);
 
+  /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(VL53L0_XSHUT_GPIO_Port, VL53L0_XSHUT_Pin, GPIO_PIN_SET);
+
   /*Configure GPIO pins : LED_1_Pin BMP280_SS_Pin */
   GPIO_InitStruct.Pin = LED_1_Pin|BMP280_SS_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
@@ -68,6 +71,13 @@ void MX_GPIO_Init(void)
   GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
   GPIO_InitStruct.Pull = GPIO_PULLUP;
   HAL_GPIO_Init(VL53L0_INT_GPIO_Port, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : VL53L0_XSHUT_Pin */
+  GPIO_InitStruct.Pin = VL53L0_XSHUT_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(VL53L0_XSHUT_GPIO_Port, &GPIO_InitStruct);
 
   /* EXTI interrupt init*/
   HAL_NVIC_SetPriority(EXTI0_IRQn, 5, 0);

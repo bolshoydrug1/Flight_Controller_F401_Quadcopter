@@ -126,7 +126,7 @@ uint8_t getAddress_VL53L0X() {
 // If io_2v8 (optional) is true or not given, the sensor is configured for 2V8
 // mode.
 bool initVL53L0X(bool io_2v8, I2C_HandleTypeDef *handler){
-  // VL53L0X_DataInit() begin
+  //VL53L0X_DataInit() begin
 
   // Handler
   memcpy(&VL53L0X_I2C_Handler, handler, sizeof(*handler));
