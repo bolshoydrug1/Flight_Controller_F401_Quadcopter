@@ -1021,3 +1021,4 @@ bool performSingleRefCalibration(uint8_t vhv_init_byte)
 
   return true;
 }
+

@@ -99,7 +99,6 @@ int main(void)
   MX_I2C1_Init();
   MX_I2C2_Init();
   MX_SPI1_Init();
-  MX_SPI2_Init();
   /* USER CODE BEGIN 2 */
 	bmp1.hspi = &hspi1;
 	bmp1.cs_pin = BMP280_SS_Pin;
@@ -107,10 +106,10 @@ int main(void)
 
 	initVL53L0X(1, &hi2c2);
 	//	Configure the sensor for high accuracy and speed in 20 cm
-	setSignalRateLimit(200);
-	setVcselPulsePeriod(VcselPeriodPreRange, 18);
-	setVcselPulsePeriod(VcselPeriodFinalRange, 14);
-	setMeasurementTimingBudget(66000);
+	setSignalRateLimit(50);
+	setVcselPulsePeriod(VcselPeriodPreRange, 12);
+	setVcselPulsePeriod(VcselPeriodFinalRange, 10);
+	setMeasurementTimingBudget(20000);
 
   /* USER CODE END 2 */
 

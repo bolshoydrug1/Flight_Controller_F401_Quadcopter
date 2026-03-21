@@ -207,6 +207,7 @@ uint16_t getTimeout(void);
 // Indicates whether a read timeout has occurred since the last call to timeoutOccurred().
 bool timeoutOccurred(void);
 
+
 //---------------------------------------------------------
 // I2C communication Functions
 //---------------------------------------------------------
