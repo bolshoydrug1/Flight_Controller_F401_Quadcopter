@@ -48,7 +48,7 @@
 /* USER CODE BEGIN Variables */
 //===============BMP280===================
 extern BMP280_HandleTypeDef bmp1;
-
+extern VL53L0_Handle_TypeDef VL53L01;
 //===============VL53L0====================
 uint32_t refSpadCount;
 uint8_t isApertureSpads;
@@ -207,7 +207,7 @@ void Start_BMP280_Task(void *argument)
   {
 	  BMP280_GetMeasuredData(&bmp1);
 
-	  osDelay(10);
+	  osDelay(20);
   }
   /* USER CODE END Start_BMP280_Task */
 }
@@ -223,14 +223,13 @@ void Start_VL53L0_Task(void *argument)
 {
   /* USER CODE BEGIN Start_VL53L0_Task */
 
-	startContinuous(0);
-	setTimeout(5);
+	startContinuous(&VL53L01, 0);
 	osDelay(10);
 
     /* === Основной цикл измерений === */
     for(;;)
     {
-    	distance = readRangeContinuousMillimeters(&distanceStr);
+    	distance = readRangeContinuousMillimeters(&VL53L01);
         osDelay(5);  // ~20 Гц опроса, можно настроить под ваши нужды
     }
   /* USER CODE END Start_VL53L0_Task */

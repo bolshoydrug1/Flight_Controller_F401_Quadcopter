@@ -15,12 +15,12 @@
 // I use a 8-bit number for the address, LSB must be 0 so that I can
 // OR over the last bit correctly based on reads and writes
 #define ADDRESS_DEFAULT 0b01010010
-
-// Record the current time to check an upcoming timeout against
-#define startTimeout() (g_timeoutStartMs = HAL_GetTick())
-
-// Check if timeout is enabled (set to nonzero value) and has expired
-#define checkTimeoutExpired() (g_ioTimeout > 0 && ((uint16_t)HAL_GetTick() - g_timeoutStartMs) > g_ioTimeout)
+//
+//// Record the current time to check an upcoming timeout against
+//#define startTimeout() (g_timeoutStartMs = HAL_GetTick())
+//
+//// Check if timeout is enabled (set to nonzero value) and has expired
+//#define checkTimeoutExpired() (g_ioTimeout > 0 && ((uint16_t)HAL_GetTick() - g_timeoutStartMs) > g_ioTimeout)
 
 // Decode VCSEL (vertical cavity surface emitting laser) pulse period in PCLKs
 // from register value
@@ -132,19 +132,45 @@ typedef struct{
   uint8_t  rangeStatus; //Ranging status (0-15)
 } statInfo_t_VL53L0X;
 
+typedef struct{
+	uint8_t io_2v8;
+	uint8_t I2C_adres;
+	I2C_HandleTypeDef* hi2c_vl53l0;
+	GPIO_TypeDef* XSHUT_port;
+	uint16_t XSHUT_pin;
+} VL53L0X_config;
+
+/**
+ * @brief Структура внутреннего состояния датчика (бывшие глобальные переменные)
+ */
+typedef struct {
+    uint16_t ioTimeout;          // Таймаут операций в мс (0 = отключён)
+    bool     isTimeout;          // Флаг: произошёл ли таймаут
+    uint16_t timeoutStartMs;     // Время начала операции для расчёта таймаута
+    uint8_t  stopVariable;       // StopVariable из VL53L0X_DevData_t (читается при init)
+    uint32_t measTimBudUs;       // Measurement Timing Budget в микросекундах
+} VL53L0X_State_TypeDef;
+
+typedef struct{
+	VL53L0X_config config;
+	statInfo_t_VL53L0X mesure;
+	VL53L0X_State_TypeDef state;
+} VL53L0_Handle_TypeDef;
 
 //------------------------------------------------------------
 // API Functions
 //------------------------------------------------------------
 // configures chip i2c and lib for `new_addr` (8 bit, LSB=0)
-void setAddress_VL53L0X(uint8_t new_addr);
+void setAddress_VL53L0X(VL53L0_Handle_TypeDef* sensor, uint8_t new_addr);
 // Returns the current I²C address.
-uint8_t getAddress_VL53L0X(void);
+uint8_t getAddress_VL53L0X(VL53L0_Handle_TypeDef* sensor);
+
+uint8_t hard_reset_VL53L0X(VL53L0_Handle_TypeDef* sensor);
 
 // Iniitializes and configures the sensor. 
 // If the optional argument io_2v8 is 1, the sensor is configured for 2V8 mode (2.8 V I/O); 
 // if 0, the sensor is left in 1V8 mode. Returns 1 if the initialization completed successfully.
-uint8_t initVL53L0X(bool io_2v8, I2C_HandleTypeDef *handler);
+uint8_t initVL53L0X(VL53L0_Handle_TypeDef* sensor);
 
 // Sets the return signal rate limit to the given value in units of MCPS (mega counts per second). 
 // This is the minimum amplitude of the signal reflected from the target and received by the sensor 
@@ -152,10 +178,10 @@ uint8_t initVL53L0X(bool io_2v8, I2C_HandleTypeDef *handler);
 // of the sensor but also increases the likelihood of getting an inaccurate reading because of 
 //  reflections from objects other than the intended target. This limit is initialized to 0.25 MCPS 
 //  by default. The return value is a boolean indicating whether the requested limit was valid.
-uint8_t setSignalRateLimit(float limit_Mcps);
+uint8_t setSignalRateLimit(VL53L0_Handle_TypeDef* sensor, float limit_Mcps);
 
 // Returns the current return signal rate limit in MCPS.
-float getSignalRateLimit(void);
+float getSignalRateLimit(VL53L0_Handle_TypeDef* sensor);
 
 // Set the measurement timing budget in microseconds, which is the time allowed
 // for one measurement; the ST API and this library take care of splitting the
@@ -164,10 +190,10 @@ float getSignalRateLimit(void);
 // factor of N decreases the range measurement standard deviation by a factor of
 // sqrt(N). Defaults to about 33 milliseconds; the minimum is 20 ms.
 // based on VL53L0X_set_measurement_timing_budget_micro_seconds()
-uint8_t setMeasurementTimingBudget(uint32_t budget_us);
+uint8_t setMeasurementTimingBudget(VL53L0_Handle_TypeDef* sensor, uint32_t budget_us);
 
 // Returns the current measurement timing budget in microseconds.
-uint32_t getMeasurementTimingBudget(void);
+uint32_t getMeasurementTimingBudget(VL53L0_Handle_TypeDef* sensor);
 
 // Sets the VCSEL (vertical cavity surface emitting laser) pulse period for the given period type
 // (VcselPeriodPreRange or VcselPeriodFinalRange) to the given value (in PCLKs). 
@@ -175,52 +201,52 @@ uint32_t getMeasurementTimingBudget(void);
 // Pre: 12 to 18 (initialized to 14 by default)
 // Final: 8 to 14 (initialized to 10 by default)
 // The return value is a boolean indicating whether the requested period was valid.
-uint8_t setVcselPulsePeriod(vcselPeriodType type, uint8_t period_pclks);
+uint8_t setVcselPulsePeriod(VL53L0_Handle_TypeDef* sensor, vcselPeriodType type, uint8_t period_pclks);
 
 // Returns the current VCSEL pulse period for the given period type.
-uint8_t getVcselPulsePeriod(vcselPeriodType type);
+uint8_t getVcselPulsePeriod(VL53L0_Handle_TypeDef* sensor, vcselPeriodType type);
 
 // Starts continuous ranging measurements. If the argument period_ms is 0, 
 // continuous back-to-back mode is used (the sensor takes measurements as often as possible); 
 // if it is nonzero, continuous timed mode is used, with the specified inter-measurement period 
 // in milliseconds determining how often the sensor takes a measurement.
-void startContinuous(uint32_t period_ms);
+void startContinuous(VL53L0_Handle_TypeDef* sensor, uint32_t period_ms);
 
 // Stops continuous mode.
-void stopContinuous(void);
+void stopContinuous(VL53L0_Handle_TypeDef* sensor);
 
 // Returns a range reading in millimeters when continuous mode is active.
 // Additional measurement data will be copied into `extraStats` if it is non-zero.
-uint16_t readRangeContinuousMillimeters( statInfo_t_VL53L0X *extraStats );
+uint16_t readRangeContinuousMillimeters(VL53L0_Handle_TypeDef* sensor);
 
 // Performs a single-shot ranging measurement and returns the reading in millimeters.
 // Additional measurement data will be copied into `extraStats` if it is non-zero.
-uint16_t readRangeSingleMillimeters( statInfo_t_VL53L0X *extraStats );
+uint16_t readRangeSingleMillimeters(VL53L0_Handle_TypeDef* sensor);
 
 // Sets a timeout period in milliseconds after which read operations will abort 
 // if the sensor is not ready. A value of 0 disables the timeout.
-void setTimeout(uint16_t timeout);
+void setTimeout(VL53L0_Handle_TypeDef* sensor, uint16_t timeout);
 
 // Returns the current timeout period setting.
-uint16_t getTimeout(void);
+uint16_t getTimeout(VL53L0_Handle_TypeDef* sensor);
 
 // Indicates whether a read timeout has occurred since the last call to timeoutOccurred().
-bool timeoutOccurred(void);
+bool timeoutOccurred(VL53L0_Handle_TypeDef* sensor);
 
 
 //---------------------------------------------------------
 // I2C communication Functions
 //---------------------------------------------------------
-void writeReg(uint8_t reg, uint8_t value);        // Write an 8-bit register
-void writeReg16Bit(uint8_t reg, uint16_t value);  // Write a 16-bit register
-void writeReg32Bit(uint8_t reg, uint32_t value);  // Write a 32-bit register
-uint8_t readReg(uint8_t reg);                     // Read an 8-bit register
-uint16_t readReg16Bit(uint8_t reg);               // Read a 16-bit register
-uint32_t readReg32Bit(uint8_t reg);               // Read a 32-bit register
+void writeReg(VL53L0_Handle_TypeDef* handle, uint8_t reg, uint8_t value);        // Write an 8-bit register
+void writeReg16Bit(VL53L0_Handle_TypeDef* handle, uint8_t reg, uint16_t value);  // Write a 16-bit register
+void writeReg32Bit(VL53L0_Handle_TypeDef* handle, uint8_t reg, uint32_t value);  // Write a 32-bit register
+uint8_t readReg(VL53L0_Handle_TypeDef* handle, uint8_t reg);                     // Read an 8-bit register
+uint16_t readReg16Bit(VL53L0_Handle_TypeDef* handle, uint8_t reg);               // Read a 16-bit register
+uint32_t readReg32Bit(VL53L0_Handle_TypeDef* handle, uint8_t reg);               // Read a 32-bit register
 // Write `count` number of bytes from `src` to the sensor, starting at `reg`
-void writeMulti(uint8_t reg, uint8_t const *src, uint8_t count);
+void writeMulti(VL53L0_Handle_TypeDef* handle, uint8_t reg, uint8_t const *src, uint8_t count);
 // Read `count` number of bytes from the sensor, starting at `reg`, to `dst`
-void readMulti(uint8_t reg, uint8_t *dst, uint8_t count);
+void readMulti(VL53L0_Handle_TypeDef* handle, uint8_t reg, uint8_t *dst, uint8_t count);
 
 // TCC: Target CentreCheck
 // MSRC: Minimum Signal Rate Check

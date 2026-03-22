@@ -51,7 +51,7 @@
 //============BMP280===============
 BMP280_HandleTypeDef bmp1;
 
-
+VL53L0_Handle_TypeDef VL53L01;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -104,16 +104,18 @@ int main(void)
 	bmp1.cs_pin = BMP280_SS_Pin;
 	bmp1.cs_port = BMP280_SS_GPIO_Port;
 
-	HAL_GPIO_WritePin(VL53L0_XSHUT_GPIO_Port, VL53L0_XSHUT_Pin, GPIO_PIN_RESET);
-	HAL_Delay(10);
-	HAL_GPIO_WritePin(VL53L0_XSHUT_GPIO_Port, VL53L0_XSHUT_Pin, GPIO_PIN_SET);
-	HAL_Delay(10);
+	VL53L01.config.hi2c_vl53l0 = &hi2c2;
+	VL53L01.config.I2C_adres = ADDRESS_DEFAULT;
+	VL53L01.config.io_2v8 = 1;
+	VL53L01.config.XSHUT_pin = VL53L0_XSHUT_Pin;
+	VL53L01.config.XSHUT_port = VL53L0_XSHUT_GPIO_Port;
 
-	initVL53L0X(1, &hi2c2);
-	setSignalRateLimit(50);
-	setVcselPulsePeriod(VcselPeriodPreRange, 14);
-	setVcselPulsePeriod(VcselPeriodFinalRange, 10);
-	setMeasurementTimingBudget(25000);
+	setTimeout(&VL53L01, 10);
+	initVL53L0X(&VL53L01);
+	setSignalRateLimit(&VL53L01, 50);
+	setVcselPulsePeriod(&VL53L01, VcselPeriodPreRange, 14);
+	setVcselPulsePeriod(&VL53L01, VcselPeriodFinalRange, 10);
+	setMeasurementTimingBudget(&VL53L01, 25000);
 
   /* USER CODE END 2 */
 
