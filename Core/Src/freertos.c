@@ -25,7 +25,7 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include "bmp280.h"
+
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -45,26 +45,12 @@
 
 /* Private variables ---------------------------------------------------------*/
 /* USER CODE BEGIN Variables */
-extern BMP280_HandleTypeDef bmp1;
+
 /* USER CODE END Variables */
 /* Definitions for defaultTask */
 osThreadId_t defaultTaskHandle;
 const osThreadAttr_t defaultTask_attributes = {
   .name = "defaultTask",
-  .stack_size = 128 * 4,
-  .priority = (osPriority_t) osPriorityNormal,
-};
-/* Definitions for MPU6050_task */
-osThreadId_t MPU6050_taskHandle;
-const osThreadAttr_t MPU6050_task_attributes = {
-  .name = "MPU6050_task",
-  .stack_size = 128 * 4,
-  .priority = (osPriority_t) osPriorityNormal,
-};
-/* Definitions for BMP280_Task */
-osThreadId_t BMP280_TaskHandle;
-const osThreadAttr_t BMP280_Task_attributes = {
-  .name = "BMP280_Task",
   .stack_size = 128 * 4,
   .priority = (osPriority_t) osPriorityNormal,
 };
@@ -75,8 +61,6 @@ const osThreadAttr_t BMP280_Task_attributes = {
 /* USER CODE END FunctionPrototypes */
 
 void StartDefaultTask(void *argument);
-void Start_MPU6050_task(void *argument);
-void Start_BMP280_Task(void *argument);
 
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
@@ -110,12 +94,6 @@ void MX_FREERTOS_Init(void) {
   /* creation of defaultTask */
   defaultTaskHandle = osThreadNew(StartDefaultTask, NULL, &defaultTask_attributes);
 
-  /* creation of MPU6050_task */
-  MPU6050_taskHandle = osThreadNew(Start_MPU6050_task, NULL, &MPU6050_task_attributes);
-
-  /* creation of BMP280_Task */
-  BMP280_TaskHandle = osThreadNew(Start_BMP280_Task, NULL, &BMP280_Task_attributes);
-
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
   /* USER CODE END RTOS_THREADS */
@@ -142,46 +120,6 @@ void StartDefaultTask(void *argument)
     osDelay(1);
   }
   /* USER CODE END StartDefaultTask */
-}
-
-/* USER CODE BEGIN Header_Start_MPU6050_task */
-/**
-* @brief Function implementing the MPU6050_task thread.
-* @param argument: Not used
-* @retval None
-*/
-/* USER CODE END Header_Start_MPU6050_task */
-void Start_MPU6050_task(void *argument)
-{
-  /* USER CODE BEGIN Start_MPU6050_task */
-
-  /* Infinite loop */
-  for(;;)
-  {
-    osDelay(1);
-  }
-  /* USER CODE END Start_MPU6050_task */
-}
-
-/* USER CODE BEGIN Header_Start_BMP280_Task */
-/**
-* @brief Function implementing the BMP280_Task thread.
-* @param argument: Not used
-* @retval None
-*/
-/* USER CODE END Header_Start_BMP280_Task */
-void Start_BMP280_Task(void *argument)
-{
-  /* USER CODE BEGIN Start_BMP280_Task */
-	BMP280_Init(&bmp1);
-  /* Infinite loop */
-  for(;;)
-  {
-	  BMP280_GetMeasuredData(&bmp1);
-
-	  osDelay(50);
-  }
-  /* USER CODE END Start_BMP280_Task */
 }
 
 /* Private application code --------------------------------------------------*/
