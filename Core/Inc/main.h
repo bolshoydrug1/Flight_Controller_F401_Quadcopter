@@ -46,7 +46,7 @@ extern "C" {
 
 /* Exported macro ------------------------------------------------------------*/
 /* USER CODE BEGIN EM */
-
+#define USE_FreeRTOS
 /* USER CODE END EM */
 
 /* Exported functions prototypes ---------------------------------------------*/
@@ -61,6 +61,10 @@ void Error_Handler(void);
 #define LED_1_GPIO_Port GPIOC
 #define BMP280_SS_Pin GPIO_PIN_14
 #define BMP280_SS_GPIO_Port GPIOC
+#define PWM3901_SS_Pin GPIO_PIN_12
+#define PWM3901_SS_GPIO_Port GPIOB
+#define PWM3901_RST_Pin GPIO_PIN_8
+#define PWM3901_RST_GPIO_Port GPIOA
 
 /* USER CODE BEGIN Private defines */
 
