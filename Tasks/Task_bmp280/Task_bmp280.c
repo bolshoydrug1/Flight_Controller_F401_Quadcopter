@@ -34,7 +34,10 @@ void Task_bmp280_Start(void)
 	bmp1.hspi = &hspi1;
 	bmp1.cs_pin = BMP280_SS_Pin;
 	bmp1.cs_port = BMP280_SS_GPIO_Port;
-	BMP280_Init(&bmp1);
+	HAL_StatusTypeDef status =  BMP280_Init(&bmp1);
+	if(status != HAL_OK){
+		Error_Handler();
+	}
 
     // Если задача уже существует (не удалена) — не создаём новую
     if (Task_bmp280_IsRunning())
