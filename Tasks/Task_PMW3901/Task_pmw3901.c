@@ -39,9 +39,9 @@ static void vTask_pmw3901_BodyFunction(void *pvParameters)
 void Task_pmw3901_Start(void)
 {
 	//Инициализация датчика при старте программы
-	HAL_GPIO_WritePin(PWM3901_RST_GPIO_Port, PWM3901_RST_Pin, GPIO_PIN_RESET);
+	//HAL_GPIO_WritePin(PWM3901_RST_GPIO_Port, PWM3901_RST_Pin, GPIO_PIN_RESET);
 	vTaskDelay(pdMS_TO_TICKS(10));
-	HAL_GPIO_WritePin(PWM3901_RST_GPIO_Port, PWM3901_RST_Pin, GPIO_PIN_SET);
+	//HAL_GPIO_WritePin(PWM3901_RST_GPIO_Port, PWM3901_RST_Pin, GPIO_PIN_SET);
 	vTaskDelay(pdMS_TO_TICKS(10));
 	uint8_t res = pmw3901mb_basic_init();
 	if(res != 0)

@@ -59,12 +59,22 @@ void Error_Handler(void);
 /* Private defines -----------------------------------------------------------*/
 #define LED_1_Pin GPIO_PIN_13
 #define LED_1_GPIO_Port GPIOC
-#define BMP280_SS_Pin GPIO_PIN_14
+#define LED_2_Pin GPIO_PIN_14
+#define LED_2_GPIO_Port GPIOC
+#define LED_3_Pin GPIO_PIN_15
+#define LED_3_GPIO_Port GPIOC
+#define BMP280_SS_Pin GPIO_PIN_4
 #define BMP280_SS_GPIO_Port GPIOC
-#define PWM3901_SS_Pin GPIO_PIN_12
-#define PWM3901_SS_GPIO_Port GPIOB
-#define PWM3901_RST_Pin GPIO_PIN_8
-#define PWM3901_RST_GPIO_Port GPIOA
+#define Ra_01_SS_Pin GPIO_PIN_6
+#define Ra_01_SS_GPIO_Port GPIOC
+#define Ra_01_DIO1_Pin GPIO_PIN_7
+#define Ra_01_DIO1_GPIO_Port GPIOC
+#define Ra_01_DIO2_Pin GPIO_PIN_8
+#define Ra_01_DIO2_GPIO_Port GPIOC
+#define I2C1_SCL_Pin GPIO_PIN_6
+#define I2C1_SCL_GPIO_Port GPIOB
+#define I2C1_SDA_Pin GPIO_PIN_7
+#define I2C1_SDA_GPIO_Port GPIOB
 
 /* USER CODE BEGIN Private defines */
 

@@ -19,6 +19,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "cmsis_os.h"
+#include "adc.h"
 #include "i2c.h"
 #include "spi.h"
 #include "tim.h"
@@ -99,6 +100,8 @@ int main(void)
   MX_TIM2_Init();
   MX_USART1_UART_Init();
   MX_USART6_UART_Init();
+  MX_ADC1_Init();
+  MX_I2C2_Init();
   /* USER CODE BEGIN 2 */
   Task_bmp280_Start();
   Task_pmw3901_Start();

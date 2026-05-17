@@ -43,10 +43,10 @@
  * КОНФИГУРАЦИЯ
  * ========================================================================== */
 #define PMW3901MB_SPI_HANDLE      hspi1              // Экземпляр SPI
-#define PMW3901MB_CS_GPIO_Port    PWM3901_SS_GPIO_Port
-#define PMW3901MB_CS_Pin          PWM3901_SS_Pin
-#define PMW3901MB_RESET_GPIO_Port PWM3901_RST_GPIO_Port
-#define PMW3901MB_RESET_Pin       PWM3901_RST_Pin
+#define PMW3901MB_CS_GPIO_Port    0 //PWM3901_SS_GPIO_Port
+#define PMW3901MB_CS_Pin          0 //PWM3901_SS_Pin
+#define PMW3901MB_RESET_GPIO_Port 0 //PWM3901_RST_GPIO_Port
+#define PMW3901MB_RESET_Pin       0 //PWM3901_RST_Pin
 
 /* Таймаут SPI-транзакций в миллисекундах */
 #define PMW3901MB_SPI_TIMEOUT_MS  1U
