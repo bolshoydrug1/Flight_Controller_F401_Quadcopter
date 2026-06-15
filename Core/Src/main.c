@@ -29,7 +29,7 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "Task_bmp280.h"
-#include "Task_pmw3901.h"
+#include "Task_ESC_CTRL.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -103,8 +103,8 @@ int main(void)
   MX_ADC1_Init();
   MX_I2C2_Init();
   /* USER CODE BEGIN 2 */
-  Task_bmp280_Start();
-  Task_pmw3901_Start();
+  //Task_bmp280_Start();
+  Task_esc_ctrl_Start();
   /* USER CODE END 2 */
 
   /* Init scheduler */
