@@ -55,7 +55,7 @@ void MX_GPIO_Init(void)
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOC, LED_2_Pin|LED_3_Pin|BMP280_SS_Pin|Ra_01_SS_Pin
-                          |Ra_01_DIO1_Pin|Ra_01_DIO2_Pin, GPIO_PIN_RESET);
+                          |Ra_01_DIO1_Pin|Ra_01_DIO2_Pin|HC_trigger_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pins : LED_1_Pin LED_2_Pin LED_3_Pin BMP280_SS_Pin
                            Ra_01_SS_Pin Ra_01_DIO1_Pin Ra_01_DIO2_Pin */
@@ -65,6 +65,19 @@ void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : HC_trigger_Pin */
+  GPIO_InitStruct.Pin = HC_trigger_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_MEDIUM;
+  HAL_GPIO_Init(HC_trigger_GPIO_Port, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : HC_echo_Pin */
+  GPIO_InitStruct.Pin = HC_echo_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING_FALLING;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  HAL_GPIO_Init(HC_echo_GPIO_Port, &GPIO_InitStruct);
 
 }
 

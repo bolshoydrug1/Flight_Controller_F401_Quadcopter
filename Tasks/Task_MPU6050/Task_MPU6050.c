@@ -46,7 +46,7 @@ void Task_mpu6050_Start(void)
 
     if (xReturned != pdPASS)
     {
-    	xTask_mpu6050Handle = NULL; // На всякий случай
+    	xTask_mpu6050Handle = NULL;
     }
 }
 

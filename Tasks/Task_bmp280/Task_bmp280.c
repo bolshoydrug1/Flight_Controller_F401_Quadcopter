@@ -10,19 +10,30 @@
 #include "bmp280.h"
 #include "spi.h"
 
+#define task_dalay_ms 10
+#define ALPHA_IIR 0.5
+
+static void IIR_BMP280(BMP280_CompensatedData* data, BMP280_CompensatedData* new_data);
+
 static TaskHandle_t xTask_bmp280Handle = NULL;
 
-BMP280_HandleTypeDef bmp1;
+static BMP280_HandleTypeDef bmp1;
+
+BMP280_CompensatedData bmp_data;
 
 // Тело задачи
 static void vTask_bmp280_BodyFunction(void *pvParameters)
 {
     TickType_t xLastWakeTime = xTaskGetTickCount();
-    const TickType_t xFrequency = pdMS_TO_TICKS(1);
+    const TickType_t xFrequency = pdMS_TO_TICKS(task_dalay_ms);
 
     for(;;)
     {
     	BMP280_GetMeasuredData(&bmp1);
+
+    	//TODO:----------Защитить мьютексом-----------
+    	IIR_BMP280(&bmp_data,&bmp1.data);
+    	//TODO:----------Защитить мьютексом-----------
 
         vTaskDelayUntil(&xLastWakeTime, xFrequency);
     }
@@ -36,8 +47,12 @@ void Task_bmp280_Start(void)
 	bmp1.cs_port = BMP280_SS_GPIO_Port;
 	HAL_StatusTypeDef status =  BMP280_Init(&bmp1);
 	if(status != HAL_OK){
-		Error_Handler();
+		//Error_Handler();
+		//TODO: написать свою функци обработки исключительной ситуации
 	}
+
+	BMP280_GetMeasuredData(&bmp1);
+	bmp_data = bmp1.data;
 
     // Если задача уже существует (не удалена) — не создаём новую
     if (Task_bmp280_IsRunning())
@@ -81,4 +96,10 @@ bool Task_bmp280_IsRunning(void)
     return (eState != eDeleted);
 }
 
-
+void IIR_BMP280(BMP280_CompensatedData* data, BMP280_CompensatedData* new_data)
+{
+	data->Altitude = data->Altitude * ALPHA_IIR + new_data->Altitude * (1 - ALPHA_IIR);
+	data->pressure = data->pressure * ALPHA_IIR + new_data->pressure * (1 - ALPHA_IIR);;
+	data->relative_height = data->relative_height * ALPHA_IIR + new_data->relative_height * (1 - ALPHA_IIR);;
+	data->temperature = data->temperature * ALPHA_IIR + new_data->temperature * (1 - ALPHA_IIR);;
+}

@@ -71,6 +71,10 @@ void Error_Handler(void);
 #define Ra_01_DIO1_GPIO_Port GPIOC
 #define Ra_01_DIO2_Pin GPIO_PIN_8
 #define Ra_01_DIO2_GPIO_Port GPIOC
+#define HC_trigger_Pin GPIO_PIN_11
+#define HC_trigger_GPIO_Port GPIOC
+#define HC_echo_Pin GPIO_PIN_12
+#define HC_echo_GPIO_Port GPIOC
 #define I2C1_SCL_Pin GPIO_PIN_6
 #define I2C1_SCL_GPIO_Port GPIOB
 #define I2C1_SDA_Pin GPIO_PIN_7
