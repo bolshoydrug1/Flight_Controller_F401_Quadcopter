@@ -61,7 +61,18 @@ static void lora_handle_rx(void)
     uint8_t rx_len = LoRa_receive(&g_lora, rx_buf, sizeof(rx_buf));
 
     if (rx_len > 0U) {
-        // TODO: разобрать команды/данные от другого передатчика (rx_buf, rx_len)
+        PacketView_t view;
+
+        if (Packet_Parse(rx_buf, rx_len, &view)) {
+            switch (view.type) {
+            case PACKET_TYPE_TELEMETRY:
+                // TODO: обработать телеметрию, пришедшую от другого передатчика
+                break;
+
+            default:
+                break;
+            }
+        }
     }
 }
 
@@ -92,9 +103,9 @@ static void vTask_telemetry_BodyFunction(void *pvParameters)
         }
 
         if (TICK_AFTER_OR_EQUAL(xTaskGetTickCount(), xNextTx)) {
-            TelemetryFrame_t frame;
-            Telemetry_GetFrame(&frame);
-            LoRa_transmit(&g_lora, (uint8_t *)&frame, sizeof(frame), TRANSMIT_TIMEOUT);
+            TelemetryPacket_t packet;
+            Telemetry_BuildPacket(&packet);
+            LoRa_transmit(&g_lora, (uint8_t *)&packet, sizeof(packet), TRANSMIT_TIMEOUT);
             xNextTx += xPeriod;
         }
     }

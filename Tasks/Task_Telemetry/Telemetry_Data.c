@@ -61,3 +61,56 @@ void Telemetry_GetFrame(TelemetryFrame_t *out)
 
 	out->timestamp_ms = (uint32_t)(xTaskGetTickCount() * portTICK_PERIOD_MS);
 }
+
+void Telemetry_BuildPacket(TelemetryPacket_t *out)
+{
+	out->header.preamble[0] = PACKET_PREAMBLE_BYTE0;
+	out->header.preamble[1] = PACKET_PREAMBLE_BYTE1;
+	out->header.type = PACKET_TYPE_TELEMETRY;
+
+	Telemetry_GetFrame(&out->payload);
+
+	out->tail.marker[0] = PACKET_TAIL_BYTE0;
+	out->tail.marker[1] = PACKET_TAIL_BYTE1;
+}
+
+bool Packet_Parse(const uint8_t *buf, uint16_t len, PacketView_t *out)
+{
+	if (buf == NULL || out == NULL) {
+		return false;
+	}
+
+	if (len < sizeof(PacketHeader_t) + PACKET_TAIL_LEN) {
+		return false;
+	}
+
+	if (buf[0] != PACKET_PREAMBLE_BYTE0 || buf[1] != PACKET_PREAMBLE_BYTE1) {
+		return false;
+	}
+
+	uint8_t type = buf[PACKET_PREAMBLE_LEN];
+	uint16_t expected_len;
+
+	switch (type) {
+	case PACKET_TYPE_TELEMETRY:
+		expected_len = (uint16_t)sizeof(TelemetryPacket_t);
+		break;
+
+	default:
+		return false;
+	}
+
+	if (len != expected_len) {
+		return false;
+	}
+
+	const uint8_t *tail = buf + len - PACKET_TAIL_LEN;
+	if (tail[0] != PACKET_TAIL_BYTE0 || tail[1] != PACKET_TAIL_BYTE1) {
+		return false;
+	}
+
+	out->type = type;
+	out->payload = buf + sizeof(PacketHeader_t);
+	out->payload_len = (uint16_t)(expected_len - sizeof(PacketHeader_t) - PACKET_TAIL_LEN);
+	return true;
+}
