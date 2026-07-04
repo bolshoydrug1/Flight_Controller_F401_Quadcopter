@@ -10,6 +10,7 @@
 
 
 #include <stdbool.h>
+#include <stdint.h>
 #include "FreeRTOS.h"
 #include "task.h"
 
@@ -35,5 +36,13 @@ void Task_telemetry_Stop(void);
  * @return false, если задача остановлена или удалена.
  */
 bool Task_telemetry_IsRunning(void);
+
+/**
+ * @brief Обработчик прерывания EXTI по пину DIO0 LoRa-модуля.
+ * Вызывается из HAL_GPIO_EXTI_Callback (см. Task_HC_SR04.c). Сам разбирается,
+ * относится ли пин к LoRa, и будит задачу телеметрии через LoRa_handleDio0IRQ.
+ * @param GPIO_Pin Пин, вызвавший прерывание.
+ */
+void Task_telemetry_HandleExti(uint16_t GPIO_Pin);
 
 #endif /* TASK_TELEMETRY_TASK_TELEMETRY_H_ */

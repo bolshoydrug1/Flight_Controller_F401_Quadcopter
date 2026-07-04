@@ -47,6 +47,7 @@ extern "C" {
 /* Exported macro ------------------------------------------------------------*/
 /* USER CODE BEGIN EM */
 #define USE_FreeRTOS
+
 /* USER CODE END EM */
 
 /* Exported functions prototypes ---------------------------------------------*/
@@ -65,16 +66,22 @@ void Error_Handler(void);
 #define LED_3_GPIO_Port GPIOC
 #define BMP280_SS_Pin GPIO_PIN_4
 #define BMP280_SS_GPIO_Port GPIOC
+#define Ra_01_RST_Pin GPIO_PIN_12
+#define Ra_01_RST_GPIO_Port GPIOB
 #define Ra_01_SS_Pin GPIO_PIN_6
 #define Ra_01_SS_GPIO_Port GPIOC
-#define Ra_01_DIO1_Pin GPIO_PIN_7
+#define Ra_01_DIO0_Pin GPIO_PIN_7
+#define Ra_01_DIO0_GPIO_Port GPIOC
+#define Ra_01_DIO0_EXTI_IRQn EXTI9_5_IRQn
+#define Ra_01_DIO1_Pin GPIO_PIN_8
 #define Ra_01_DIO1_GPIO_Port GPIOC
-#define Ra_01_DIO2_Pin GPIO_PIN_8
+#define Ra_01_DIO2_Pin GPIO_PIN_9
 #define Ra_01_DIO2_GPIO_Port GPIOC
 #define HC_trigger_Pin GPIO_PIN_11
 #define HC_trigger_GPIO_Port GPIOC
 #define HC_echo_Pin GPIO_PIN_12
 #define HC_echo_GPIO_Port GPIOC
+#define HC_echo_EXTI_IRQn EXTI15_10_IRQn
 #define I2C1_SCL_Pin GPIO_PIN_6
 #define I2C1_SCL_GPIO_Port GPIOB
 #define I2C1_SDA_Pin GPIO_PIN_7

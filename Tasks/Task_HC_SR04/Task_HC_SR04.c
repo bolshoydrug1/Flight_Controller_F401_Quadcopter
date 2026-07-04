@@ -12,6 +12,8 @@
 #include "tim.h"
 #include "main.h"
 #include "hc_sr04.h"
+#include "Telemetry_Data.h"
+#include "Task_Telemetry.h"
 
 #define task_dalay_ms 50
 
@@ -36,9 +38,8 @@ static void vTask_hc_sr04_BodyFunction(void *pvParameters)
 
 		if (xSemaphoreTake(xEchoDoneSemaphore, pdMS_TO_TICKS(40)) == pdTRUE)
 		{
-			//TODO:----------Защитить мьютексом-----------
 			height_hc_sr04 = hc_sr04_get_distance(&hc_sr04_m, 25) * ALPHA_IIR + height_hc_sr04 * (1.0f - ALPHA_IIR);
-			//TODO:----------Защитить мьютексом-----------
+			Telemetry_SetHeight(height_hc_sr04);
 		}
 
         vTaskDelayUntil(&xLastWakeTime, xFrequency);
@@ -102,33 +103,35 @@ bool Task_hc_sr04_IsRunning(void)
     return (eState != eDeleted);
 }
 
-void EXTI15_10_IRQHandler(void)
-{
-    HAL_GPIO_EXTI_IRQHandler(HC_echo_Pin);
-}
-
+/*
+ * Единственное во всём проекте определение HAL_GPIO_EXTI_Callback (weak-символ
+ * может быть переопределён только один раз на весь линковочный образ).
+ * Поэтому сюда же добавлена диспетчеризация на LoRa/Task_Telemetry по пину
+ * DIO0, вместо того чтобы заводить собственный такой колбэк в другом файле.
+ */
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
-    if (GPIO_Pin != HC_echo_Pin)
+    if (GPIO_Pin == HC_echo_Pin)
     {
+        if (HAL_GPIO_ReadPin(HC_echo_GPIO_Port, HC_echo_Pin) == GPIO_PIN_SET)
+        {
+            echo_start_it(&hc_sr04_m);
+        }
+        else
+        {
+            echo_end_it(&hc_sr04_m);
+
+            if (xEchoDoneSemaphore != NULL)
+            {
+                BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+                xSemaphoreGiveFromISR(xEchoDoneSemaphore, &xHigherPriorityTaskWoken);
+                portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+            }
+        }
         return;
     }
 
-    if (HAL_GPIO_ReadPin(HC_echo_GPIO_Port, HC_echo_Pin) == GPIO_PIN_SET)
-    {
-        echo_start_it(&hc_sr04_m);
-    }
-    else
-    {
-        echo_end_it(&hc_sr04_m);
-
-        if (xEchoDoneSemaphore != NULL)
-        {
-            BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-            xSemaphoreGiveFromISR(xEchoDoneSemaphore, &xHigherPriorityTaskWoken);
-            portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
-        }
-    }
+    Task_telemetry_HandleExti(GPIO_Pin);
 }
 
 

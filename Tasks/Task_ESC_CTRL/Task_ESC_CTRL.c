@@ -19,32 +19,38 @@ static void vTask_esc_ctrl_BodyFunction(void *pvParameters)
 
     // Запускаем ШИМ один раз (таймер уже настроен)
     HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_1);
+    HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_2);
+    HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_3);
+    HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_4);
 
     for(;;)
     {
-        // Средняя скорость: импульс 1.5 мс
-        __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, 1500);
-        vTaskDelay(pdMS_TO_TICKS(1000));
+//        // Средняя скорость: импульс 1.5 мс
+//        __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1 || TIM_CHANNEL_2 || TIM_CHANNEL_3 || TIM_CHANNEL_4, 1500);
+//        vTaskDelay(pdMS_TO_TICKS(1000));
 
         // Стоп: импульс 1 мс (можно 1000) или полностью выключить канал
         __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, 1000);
+        __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_2, 1000);
+        __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_3, 1000);
+        __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_4, 1000);
         vTaskDelay(pdMS_TO_TICKS(1000));
-
-        // Средняя скорость: импульс 1.5 мс
-        __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, 1100);
-        vTaskDelay(pdMS_TO_TICKS(1000));
-
-        // Стоп: импульс 1 мс (можно 1000) или полностью выключить канал
-        __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, 1000);
-        vTaskDelay(pdMS_TO_TICKS(1000));
-
-        // Средняя скорость: импульс 1.5 мс
-        __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, 1250);
-        vTaskDelay(pdMS_TO_TICKS(1000));
-
-        // Стоп: импульс 1 мс (можно 1000) или полностью выключить канал
-        __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, 1000);
-        vTaskDelay(pdMS_TO_TICKS(1000));
+//
+//        // Средняя скорость: импульс 1.5 мс
+//        __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1 || TIM_CHANNEL_2 || TIM_CHANNEL_3 || TIM_CHANNEL_4, 1100);
+//        vTaskDelay(pdMS_TO_TICKS(1000));
+//
+//        // Стоп: импульс 1 мс (можно 1000) или полностью выключить канал
+//        __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1 || TIM_CHANNEL_2 || TIM_CHANNEL_3 || TIM_CHANNEL_4, 1000);
+//        vTaskDelay(pdMS_TO_TICKS(1000));
+//
+//        // Средняя скорость: импульс 1.5 мс
+//        __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1 || TIM_CHANNEL_2 || TIM_CHANNEL_3 || TIM_CHANNEL_4, 1250);
+//        vTaskDelay(pdMS_TO_TICKS(1000));
+//
+//        // Стоп: импульс 1 мс (можно 1000) или полностью выключить канал
+//        __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1 || TIM_CHANNEL_2 || TIM_CHANNEL_3 || TIM_CHANNEL_4, 1000);
+//        vTaskDelay(pdMS_TO_TICKS(1000));
     }
 }
 void Task_esc_ctrl_Start(void)

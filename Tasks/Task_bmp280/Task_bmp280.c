@@ -9,6 +9,7 @@
 #include "task.h"
 #include "bmp280.h"
 #include "spi.h"
+#include "Telemetry_Data.h"
 
 #define task_dalay_ms 10
 #define ALPHA_IIR 0.5
@@ -31,9 +32,8 @@ static void vTask_bmp280_BodyFunction(void *pvParameters)
     {
     	BMP280_GetMeasuredData(&bmp1);
 
-    	//TODO:----------Защитить мьютексом-----------
     	IIR_BMP280(&bmp_data,&bmp1.data);
-    	//TODO:----------Защитить мьютексом-----------
+    	Telemetry_SetBaro(bmp_data.temperature, bmp_data.pressure, bmp_data.Altitude, bmp_data.relative_height);
 
         vTaskDelayUntil(&xLastWakeTime, xFrequency);
     }

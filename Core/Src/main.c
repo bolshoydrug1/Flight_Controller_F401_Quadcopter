@@ -30,6 +30,8 @@
 /* USER CODE BEGIN Includes */
 #include "Task_bmp280.h"
 #include "Task_ESC_CTRL.h"
+#include "Task_HC_SR04.h"
+#include "Task_Telemetry.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -104,8 +106,10 @@ int main(void)
   MX_I2C2_Init();
   MX_TIM3_Init();
   /* USER CODE BEGIN 2 */
-  //Task_bmp280_Start();
+  Task_bmp280_Start();
   Task_esc_ctrl_Start();
+  Task_hc_sr04_Start();
+  Task_telemetry_Start();
   /* USER CODE END 2 */
 
   /* Init scheduler */
