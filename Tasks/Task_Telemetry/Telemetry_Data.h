@@ -72,8 +72,13 @@ typedef struct {
 	float altitude_m;
 	float relative_height_m;
 
-	//Batteru
+	//Battery
 	uint8_t bat_procent;
+
+	//GPS ( × 10^7)
+	int32_t width_gps;
+	int32_t longitude_gps;
+	int16_t angle_from_north;
 
 	//Errors
 	uint8_t error;
