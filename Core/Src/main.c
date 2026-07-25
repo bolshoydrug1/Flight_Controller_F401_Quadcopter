@@ -20,6 +20,7 @@
 #include "main.h"
 #include "cmsis_os.h"
 #include "adc.h"
+#include "dma.h"
 #include "i2c.h"
 #include "spi.h"
 #include "tim.h"
@@ -31,6 +32,7 @@
 #include "Task_bmp280.h"
 #include "Task_ESC_CTRL.h"
 #include "Task_HC_SR04.h"
+#include "Task_MPU6050.h"
 #include "Task_Telemetry.h"
 /* USER CODE END Includes */
 
@@ -96,6 +98,7 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
+  MX_DMA_Init();
   MX_I2C1_Init();
   MX_SPI1_Init();
   MX_SPI2_Init();
@@ -109,6 +112,7 @@ int main(void)
   Task_bmp280_Start();
   Task_esc_ctrl_Start();
   Task_hc_sr04_Start();
+  Task_mpu6050_Start();
   Task_telemetry_Start();
   /* USER CODE END 2 */
 

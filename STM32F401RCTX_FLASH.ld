@@ -45,7 +45,11 @@ _Min_Stack_Size = 0x400; /* required amount of stack */
 MEMORY
 {
   RAM    (xrw)    : ORIGIN = 0x20000000,   LENGTH = 64K
-  FLASH    (rx)    : ORIGIN = 0x8000000,   LENGTH = 256K
+  /* LENGTH урезана со штатных 256K до 128K: сектор 5 (0x08020000..0x08040000,
+     128K) намеренно исключён из линковки и зарезервирован под хранение
+     калибровочных данных во flash (см. MPU6050_ACCEL_OFFSET_FLASH_ADDR) -
+     линкер никогда не разместит там код/константы, даже если прошивка вырастет. */
+  FLASH    (rx)    : ORIGIN = 0x8000000,   LENGTH = 128K
 }
 
 /* Sections */

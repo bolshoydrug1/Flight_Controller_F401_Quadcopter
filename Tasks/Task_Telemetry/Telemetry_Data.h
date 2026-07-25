@@ -39,13 +39,18 @@
 
 //Взлёт на высоту X
 #define PACKET_TYPE_SET_HIGHT		0x02U
+
 //Посадка
+#define PACKET_TYPE_BOARDING		0x03U
 
 //Аварийное отключение
+#define PACKET_TYPE_EMG_STOP		0x04U
 
 //Движение вправо\влево\вверх\вниз\вперёд\назад
+#define PACKET_TYPE_MOVE		0x05U
 
 //Поворот по часовой\против часовой стрелки
+#define PACKET_TYPE_ROTATE		0x06U
 
 
 #pragma pack(push, 1)
