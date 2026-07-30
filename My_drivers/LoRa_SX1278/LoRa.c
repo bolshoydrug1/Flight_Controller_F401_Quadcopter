@@ -18,6 +18,13 @@
  * теперь означают время ожидания TxDone/RxDone в эфире. */
 #define LORA_SPI_IO_TIMEOUT_MS	10
 
+/* Сколько раз повторять одну SPI-транзакцию (LoRa_readReg/writeReg) при
+ * HAL-ошибке/таймауте, прежде чем сдаться. */
+#define LORA_SPI_MAX_ATTEMPTS	3
+
+/* Сколько раз повторять пару запись+обратное чтение в LoRa_writeVerified. */
+#define LORA_REG_WRITE_MAX_ATTEMPTS	3
+
 /* ----------------------------------------------------------------------------- *\
 		name        : newLoRa
 
@@ -76,7 +83,7 @@ void LoRa_reset(LoRa* _LoRa){
 
 		returns     : Nothing
 \* ----------------------------------------------------------------------------- */
-void LoRa_gotoMode(LoRa* _LoRa, int mode){
+uint8_t LoRa_gotoMode(LoRa* _LoRa, int mode){
 	uint8_t    read;
 	uint8_t    data;
 
@@ -85,22 +92,28 @@ void LoRa_gotoMode(LoRa* _LoRa, int mode){
 
 	if(mode == SLEEP_MODE){
 		data = (read & 0xF8) | 0x00;
-		_LoRa->current_mode = SLEEP_MODE;
 	}else if (mode == STNBY_MODE){
 		data = (read & 0xF8) | 0x01;
-		_LoRa->current_mode = STNBY_MODE;
 	}else if (mode == TRANSMIT_MODE){
 		data = (read & 0xF8) | 0x03;
-		_LoRa->current_mode = TRANSMIT_MODE;
 	}else if (mode == RXCONTIN_MODE){
 		data = (read & 0xF8) | 0x05;
-		_LoRa->current_mode = RXCONTIN_MODE;
 	}else if (mode == RXSINGLE_MODE){
 		data = (read & 0xF8) | 0x06;
-		_LoRa->current_mode = RXSINGLE_MODE;
+	}else{
+		return 0;
 	}
 
-	LoRa_write(_LoRa, RegOpMode, data);
+	/* current_mode обновляем только после подтверждённой записи - иначе
+	 * software-состояние может разойтись с реальным режимом чипа (именно
+	 * это давало периодическую поломку: current_mode "менялся", а чип на
+	 * самом деле оставался в прежнем режиме из-за потерянной SPI-транзакции). */
+	if(!LoRa_writeVerified(_LoRa, RegOpMode, data, LORA_REG_WRITE_MAX_ATTEMPTS)){
+		return 0;
+	}
+
+	_LoRa->current_mode = mode;
+	return 1;
 }
 
 
@@ -119,11 +132,25 @@ void LoRa_gotoMode(LoRa* _LoRa, int mode){
 
 		returns     : Nothing
 \* ----------------------------------------------------------------------------- */
-void LoRa_readReg(LoRa* _LoRa, uint8_t* address, uint16_t r_length, uint8_t* output, uint16_t w_length){
-	HAL_GPIO_WritePin(_LoRa->CS_port, _LoRa->CS_pin, GPIO_PIN_RESET);
-	HAL_SPI_Transmit(_LoRa->hSPIx, address, r_length, LORA_SPI_IO_TIMEOUT_MS);
-	HAL_SPI_Receive(_LoRa->hSPIx, output, w_length, LORA_SPI_IO_TIMEOUT_MS);
-	HAL_GPIO_WritePin(_LoRa->CS_port, _LoRa->CS_pin, GPIO_PIN_SET);
+uint8_t LoRa_readReg(LoRa* _LoRa, uint8_t* address, uint16_t r_length, uint8_t* output, uint16_t w_length){
+	HAL_StatusTypeDef status;
+
+	for(uint8_t attempt = 0; attempt < LORA_SPI_MAX_ATTEMPTS; attempt++){
+		HAL_GPIO_WritePin(_LoRa->CS_port, _LoRa->CS_pin, GPIO_PIN_RESET);
+		status = HAL_SPI_Transmit(_LoRa->hSPIx, address, r_length, LORA_SPI_IO_TIMEOUT_MS);
+		if(status == HAL_OK){
+			status = HAL_SPI_Receive(_LoRa->hSPIx, output, w_length, LORA_SPI_IO_TIMEOUT_MS);
+		}
+		HAL_GPIO_WritePin(_LoRa->CS_port, _LoRa->CS_pin, GPIO_PIN_SET);
+
+		if(status == HAL_OK){
+			return 1;
+		}
+		/* Транзакция не прошла (шум/таймаут на шине) - сбрасываем состояние
+		 * периферии SPI, чтобы следующая попытка стартовала с чистого листа. */
+		HAL_SPI_Abort(_LoRa->hSPIx);
+	}
+	return 0;
 }
 
 /* ----------------------------------------------------------------------------- *\
@@ -141,11 +168,23 @@ void LoRa_readReg(LoRa* _LoRa, uint8_t* address, uint16_t r_length, uint8_t* out
 
 		returns     : Nothing
 \* ----------------------------------------------------------------------------- */
-void LoRa_writeReg(LoRa* _LoRa, uint8_t* address, uint16_t r_length, uint8_t* values, uint16_t w_length){
-	HAL_GPIO_WritePin(_LoRa->CS_port, _LoRa->CS_pin, GPIO_PIN_RESET);
-	HAL_SPI_Transmit(_LoRa->hSPIx, address, r_length, LORA_SPI_IO_TIMEOUT_MS);
-	HAL_SPI_Transmit(_LoRa->hSPIx, values, w_length, LORA_SPI_IO_TIMEOUT_MS);
-	HAL_GPIO_WritePin(_LoRa->CS_port, _LoRa->CS_pin, GPIO_PIN_SET);
+uint8_t LoRa_writeReg(LoRa* _LoRa, uint8_t* address, uint16_t r_length, uint8_t* values, uint16_t w_length){
+	HAL_StatusTypeDef status;
+
+	for(uint8_t attempt = 0; attempt < LORA_SPI_MAX_ATTEMPTS; attempt++){
+		HAL_GPIO_WritePin(_LoRa->CS_port, _LoRa->CS_pin, GPIO_PIN_RESET);
+		status = HAL_SPI_Transmit(_LoRa->hSPIx, address, r_length, LORA_SPI_IO_TIMEOUT_MS);
+		if(status == HAL_OK){
+			status = HAL_SPI_Transmit(_LoRa->hSPIx, values, w_length, LORA_SPI_IO_TIMEOUT_MS);
+		}
+		HAL_GPIO_WritePin(_LoRa->CS_port, _LoRa->CS_pin, GPIO_PIN_SET);
+
+		if(status == HAL_OK){
+			return 1;
+		}
+		HAL_SPI_Abort(_LoRa->hSPIx);
+	}
+	return 0;
 }
 
 /* ----------------------------------------------------------------------------- *\
@@ -344,7 +383,11 @@ void LoRa_setSyncWord(LoRa* _LoRa, uint8_t syncword){
 		returns     : register value
 \* ----------------------------------------------------------------------------- */
 uint8_t LoRa_read(LoRa* _LoRa, uint8_t address){
-	uint8_t read_data;
+	/* 0 по умолчанию: если LoRa_readReg исчерпает все попытки ещё до фазы
+	 * приёма (например, транзакция адреса не проходит ни разу), HAL_SPI_Receive
+	 * не вызовется вообще, и без этой инициализации отсюда ушёл бы мусор со
+	 * стека вместо предсказуемого значения. */
+	uint8_t read_data = 0;
 	uint8_t data_addr;
 
 	data_addr = address & 0x7F;
@@ -375,6 +418,33 @@ void LoRa_write(LoRa* _LoRa, uint8_t address, uint8_t value){
 }
 
 /* ----------------------------------------------------------------------------- *\
+		name        : LoRa_writeVerified
+
+		description : write a value and read it back to confirm the chip actually
+					  accepted it - SPI-level success alone doesn't guarantee that
+					  (e.g. LongRangeMode в RegOpMode игнорируется чипом вне
+					  Sleep-режима). Retries the whole write+verify cycle.
+
+		arguments   :
+			LoRa*    LoRa         --> LoRa object handler
+			uint8_t  address      --> address of the register e.g 0x01
+			uint8_t  value        --> value that you want to write
+			uint8_t  max_attempts --> how many write+verify cycles to try
+
+		returns     : 1 if verified, 0 if not confirmed after max_attempts
+\* ----------------------------------------------------------------------------- */
+uint8_t LoRa_writeVerified(LoRa* _LoRa, uint8_t address, uint8_t value, uint8_t max_attempts){
+	for(uint8_t attempt = 0; attempt < max_attempts; attempt++){
+		LoRa_write(_LoRa, address, value);
+		DELAY_MS(2);
+		if(LoRa_read(_LoRa, address) == value){
+			return 1;
+		}
+	}
+	return 0;
+}
+
+/* ----------------------------------------------------------------------------- *\
 		name        : LoRa_BurstWrite
 
 		description : write a set of values in a register by an address respectively
@@ -388,16 +458,26 @@ void LoRa_write(LoRa* _LoRa, uint8_t address, uint8_t value){
 \* ----------------------------------------------------------------------------- */
 void LoRa_BurstWrite(LoRa* _LoRa, uint8_t address, uint8_t *value, uint8_t length){
 	uint8_t addr;
+	HAL_StatusTypeDef status;
 	addr = address | 0x80;
 
-	//NSS = 1
-	HAL_GPIO_WritePin(_LoRa->CS_port, _LoRa->CS_pin, GPIO_PIN_RESET);
+	for(uint8_t attempt = 0; attempt < LORA_SPI_MAX_ATTEMPTS; attempt++){
+		//NSS = 1
+		HAL_GPIO_WritePin(_LoRa->CS_port, _LoRa->CS_pin, GPIO_PIN_RESET);
 
-	HAL_SPI_Transmit(_LoRa->hSPIx, &addr, 1, LORA_SPI_IO_TIMEOUT_MS);
-	//Write data in FiFo
-	HAL_SPI_Transmit(_LoRa->hSPIx, value, length, LORA_SPI_IO_TIMEOUT_MS);
-	//NSS = 0
-	HAL_GPIO_WritePin(_LoRa->CS_port, _LoRa->CS_pin, GPIO_PIN_SET);
+		status = HAL_SPI_Transmit(_LoRa->hSPIx, &addr, 1, LORA_SPI_IO_TIMEOUT_MS);
+		if(status == HAL_OK){
+			//Write data in FiFo
+			status = HAL_SPI_Transmit(_LoRa->hSPIx, value, length, LORA_SPI_IO_TIMEOUT_MS);
+		}
+		//NSS = 0
+		HAL_GPIO_WritePin(_LoRa->CS_port, _LoRa->CS_pin, GPIO_PIN_SET);
+
+		if(status == HAL_OK){
+			return;
+		}
+		HAL_SPI_Abort(_LoRa->hSPIx);
+	}
 }
 /* ----------------------------------------------------------------------------- *\
 		name        : LoRa_isvalid
@@ -432,25 +512,32 @@ uint8_t LoRa_isvalid(LoRa* _LoRa){
 uint8_t LoRa_transmit(LoRa* _LoRa, uint8_t* data, uint8_t length, uint16_t timeout){
 	uint8_t read;
 	uint32_t notified = 0;
-	BaseType_t gotNotification;
+	BaseType_t gotNotification = pdFALSE;
 
 	int mode = _LoRa->current_mode;
-	LoRa_gotoMode(_LoRa, STNBY_MODE);
+	if(!LoRa_gotoMode(_LoRa, STNBY_MODE)){
+		/* Не смогли подтверждённо перейти в Standby - FIFO/регистры трогать
+		 * бессмысленно, передачи не будет. */
+		return 0;
+	}
 	read = LoRa_read(_LoRa, RegFiFoTxBaseAddr);
 	LoRa_write(_LoRa, RegFiFoAddPtr, read);
 	LoRa_write(_LoRa, RegPayloadLength, length);
 	LoRa_BurstWrite(_LoRa, RegFiFo, data, length);
 
-	LoRa_gotoMode(_LoRa, TRANSMIT_MODE);
-
-	/* Пока идёт передача, current_mode == TRANSMIT_MODE, поэтому любое
-	 * срабатывание DIO0 в этом окне - это TxDone (RxDone физически не может
-	 * произойти во время своей же передачи). Чистим оба бита на входе/выходе,
-	 * чтобы отбросить случайный устаревший RxDone-флаг, прилетевший в узком
-	 * зазоре между выходом из RXCONTIN и переходом в TRANSMIT_MODE. */
-	gotNotification = xTaskNotifyWait(LORA_NOTIFY_TXDONE | LORA_NOTIFY_RXDONE,
-									   LORA_NOTIFY_TXDONE | LORA_NOTIFY_RXDONE,
-									   &notified, pdMS_TO_TICKS(timeout));
+	if(LoRa_gotoMode(_LoRa, TRANSMIT_MODE)){
+		/* Пока идёт передача, current_mode == TRANSMIT_MODE, поэтому любое
+		 * срабатывание DIO0 в этом окне - это TxDone (RxDone физически не может
+		 * произойти во время своей же передачи). Чистим оба бита на входе/выходе,
+		 * чтобы отбросить случайный устаревший RxDone-флаг, прилетевший в узком
+		 * зазоре между выходом из RXCONTIN и переходом в TRANSMIT_MODE. */
+		gotNotification = xTaskNotifyWait(LORA_NOTIFY_TXDONE | LORA_NOTIFY_RXDONE,
+										   LORA_NOTIFY_TXDONE | LORA_NOTIFY_RXDONE,
+										   &notified, pdMS_TO_TICKS(timeout));
+	}
+	/* Если переход в TRANSMIT_MODE не подтвердился - передача физически не
+	 * стартовала, ждать TxDone бессмысленно, gotNotification так и остаётся
+	 * pdFALSE. */
 
 	LoRa_write(_LoRa, RegIrqFlags, 0xFF);
 	LoRa_gotoMode(_LoRa, mode);
@@ -493,17 +580,24 @@ uint8_t LoRa_receive(LoRa* _LoRa, uint8_t* data, uint8_t length){
 	for(int i=0; i<length; i++)
 		data[i]=0;
 
-	LoRa_gotoMode(_LoRa, STNBY_MODE);
-	read = LoRa_read(_LoRa, RegIrqFlags);
-	if((read & 0x40) != 0){
-		LoRa_write(_LoRa, RegIrqFlags, 0xFF);
-		number_of_bytes = LoRa_read(_LoRa, RegRxNbBytes);
-		read = LoRa_read(_LoRa, RegFiFoRxCurrentAddr);
-		LoRa_write(_LoRa, RegFiFoAddPtr, read);
-		min = length >= number_of_bytes ? number_of_bytes : length;
-		for(int i=0; i<min; i++)
-			data[i] = LoRa_read(_LoRa, RegFiFo);
+	/* Если не удалось подтверждённо перейти в Standby - лезть в FIFO
+	 * небезопасно (мог остаться в RXCONTIN и продолжать принимать поверх
+	 * того, что мы пытаемся читать), пропускаем такт. */
+	if(LoRa_gotoMode(_LoRa, STNBY_MODE)){
+		read = LoRa_read(_LoRa, RegIrqFlags);
+		if((read & 0x40) != 0){
+			LoRa_write(_LoRa, RegIrqFlags, 0xFF);
+			number_of_bytes = LoRa_read(_LoRa, RegRxNbBytes);
+			read = LoRa_read(_LoRa, RegFiFoRxCurrentAddr);
+			LoRa_write(_LoRa, RegFiFoAddPtr, read);
+			min = length >= number_of_bytes ? number_of_bytes : length;
+			for(int i=0; i<min; i++)
+				data[i] = LoRa_read(_LoRa, RegFiFo);
+		}
 	}
+	/* Возврат в приём - best-effort в любом случае, включая ветку выше:
+	 * если сейчас не получится, ISR/следующий такт этого не заметит, а
+	 * оставаться в Standby молча (никогда не приняв следующий пакет) хуже. */
 	LoRa_gotoMode(_LoRa, RXCONTIN_MODE);
     return min;
 }
@@ -568,16 +662,23 @@ uint16_t LoRa_init(LoRa* _LoRa){
 	_LoRa->ownerTask = xTaskGetCurrentTaskHandle();
 
 	if(LoRa_isvalid(_LoRa)){
-		// goto sleep mode:
-		LoRa_gotoMode(_LoRa, SLEEP_MODE);
-		DELAY_MS(10);
-
-		// turn on LoRa mode:
+		/* Включаем LoRa-режим (LongRangeMode=1) и Sleep одной атомарной
+		 * write+verify записью, а не двумя раздельными транзакциями
+		 * (сначала обычный Sleep, потом отдельно доп-бит LongRangeMode).
+		 * По даташиту LongRangeMode принимается чипом только при переходе
+		 * через Sleep, и если между этими двумя отдельными записями
+		 * терялась SPI-транзакция (шум/таймаут - см. LoRa_readReg/writeReg
+		 * без проверки статуса, что и было первопричиной), чип оставался в
+		 * FSK/Standby и всё дальнейшее общение с ним било мимо LoRa-регистров.
+		 * Явную SLEEP_MODE-константу не используем: current_mode ещё не
+		 * инициализирован на этом шаге, пишем regOpMode напрямую. */
 		read = LoRa_read(_LoRa, RegOpMode);
+		data = (read & 0x78) | 0x80; // LongRangeMode=1, Mode=Sleep(000), остальное как было
+		if(!LoRa_writeVerified(_LoRa, RegOpMode, data, LORA_REG_WRITE_MAX_ATTEMPTS)){
+			return LORA_NOT_FOUND;
+		}
+		_LoRa->current_mode = SLEEP_MODE;
 		DELAY_MS(10);
-		data = read | 0x80;
-		LoRa_write(_LoRa, RegOpMode, data);
-		DELAY_MS(100);
 
 		// set frequency:
 		LoRa_setFrequency(_LoRa, _LoRa->frequency);
@@ -616,8 +717,9 @@ uint16_t LoRa_init(LoRa* _LoRa){
 		LoRa_write(_LoRa, RegDioMapping1, data);
 
 		// goto standby mode:
-		LoRa_gotoMode(_LoRa, STNBY_MODE);
-		_LoRa->current_mode = STNBY_MODE;
+		if(!LoRa_gotoMode(_LoRa, STNBY_MODE)){
+			return LORA_NOT_FOUND;
+		}
 		DELAY_MS(10);
 
 		read = LoRa_read(_LoRa, RegVersion);

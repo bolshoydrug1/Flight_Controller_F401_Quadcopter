@@ -50,6 +50,16 @@ void Telemetry_SetBaro(float temperature_c, float pressure_mmhg, float altitude_
 	}
 }
 
+void Telemetry_SetBattery(uint8_t bat_procent)
+{
+	ensure_mutex();
+
+	if (xSemaphoreTake(s_mutex, pdMS_TO_TICKS(TELEMETRY_LOCK_TIMEOUT_MS)) == pdTRUE) {
+		s_frame.bat_procent = bat_procent;
+		xSemaphoreGive(s_mutex);
+	}
+}
+
 void Telemetry_GetFrame(TelemetryFrame_t *out)
 {
 	ensure_mutex();

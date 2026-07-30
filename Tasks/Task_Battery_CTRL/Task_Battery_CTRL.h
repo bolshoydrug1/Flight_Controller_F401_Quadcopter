@@ -10,6 +10,7 @@
 
 
 #include <stdbool.h>
+#include <stdint.h>
 #include "FreeRTOS.h"
 #include "task.h"
 
@@ -21,6 +22,11 @@
 /**
  * @brief Запускает задачу.
  * Если задача уже запущена, функция ничего не делает.
+ *
+ * При старте задача запускает TIM4 (100Гц триггер АЦП по событию CC4) и ADC1 в режиме DMA
+ * (circular, без инкремента памяти - см. .ioc). Дальше просто периодически
+ * читает последнее значение из DMA-ячейки, гонит через инлайновый БИХ-фильтр
+ * и публикует процент заряда в Telemetry_Data (Telemetry_SetBattery).
  */
 void Task_battery_ctrl_Start(void);
 
@@ -35,5 +41,11 @@ void Task_battery_ctrl_Stop(void);
  * @return false, если задача остановлена или удалена.
  */
 bool Task_battery_ctrl_IsRunning(void);
+
+/**
+ * @brief Текущий отфильтрованный процент заряда (0-100).
+ * @return 0, если задача ещё не сделала ни одного цикла фильтра.
+ */
+uint8_t Task_battery_ctrl_GetPercent(void);
 
 #endif /* TASK_BATTERY_CTRL_TASK_BATTERY_CTRL_H_ */

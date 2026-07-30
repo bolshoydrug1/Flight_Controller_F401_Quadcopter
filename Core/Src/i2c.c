@@ -131,15 +131,17 @@ void HAL_I2C_MspInit(I2C_HandleTypeDef* i2cHandle)
 
     __HAL_LINKDMA(i2cHandle,hdmarx,hdma_i2c1_rx);
 
+  /* USER CODE BEGIN I2C1_MspInit 1 */
+
     /* I2C1 error interrupt: HAL_I2C_Mem_Read_DMA() включает I2C_IT_ERR на
      * время DMA-транзакции (NACK/BERR/ARLO/OVR). Без этого NVIC-разрешения
      * ошибка шины никогда не дойдёт до HAL_I2C_ErrorCallback, hi2c1 навсегда
      * останется в состоянии HAL_I2C_STATE_BUSY_RX, и все последующие вызовы
-     * HAL_I2C_Mem_Read_DMA будут молча возвращать HAL_BUSY. */
+     * HAL_I2C_Mem_Read_DMA будут молча возвращать HAL_BUSY. Внутри USER CODE
+     * маркера - переживает регенерацию CubeMX (за исключением случая, если
+     * не будет полностью удалена секция вручную). */
     HAL_NVIC_SetPriority(I2C1_ER_IRQn, 5, 0);
     HAL_NVIC_EnableIRQ(I2C1_ER_IRQn);
-
-  /* USER CODE BEGIN I2C1_MspInit 1 */
 
   /* USER CODE END I2C1_MspInit 1 */
   }

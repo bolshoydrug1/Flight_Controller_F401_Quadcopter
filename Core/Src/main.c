@@ -29,6 +29,7 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include "Task_Battery_CTRL.h"
 #include "Task_bmp280.h"
 #include "Task_ESC_CTRL.h"
 #include "Task_HC_SR04.h"
@@ -109,8 +110,9 @@ int main(void)
   MX_I2C2_Init();
   MX_TIM3_Init();
   /* USER CODE BEGIN 2 */
-  Task_bmp280_Start();
   Task_esc_ctrl_Start();
+  Task_battery_ctrl_Start();
+  Task_bmp280_Start();
   Task_hc_sr04_Start();
   Task_mpu6050_Start();
   Task_telemetry_Start();

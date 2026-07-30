@@ -110,6 +110,7 @@ typedef struct {
 
 void Telemetry_SetHeight(float height_agl_m);
 void Telemetry_SetBaro(float temperature_c, float pressure_mmhg, float altitude_m, float relative_height_m);
+void Telemetry_SetBattery(uint8_t bat_procent);
 
 /**
  * @brief Забирает потокобезопасную копию текущего снимка телеметрии.

@@ -124,12 +124,36 @@ typedef struct LoRa_setting{
 
 LoRa newLoRa(void);
 void LoRa_reset(LoRa* _LoRa);
-void LoRa_readReg(LoRa* _LoRa, uint8_t* address, uint16_t r_length, uint8_t* output, uint16_t w_length);
-void LoRa_writeReg(LoRa* _LoRa, uint8_t* address, uint16_t r_length, uint8_t* values, uint16_t w_length);
-void LoRa_gotoMode(LoRa* _LoRa, int mode);
+
+/**
+ * Транзакции регистрового доступа теперь возвращают 1/0 (успех/провал) вместо
+ * void: внутри - до LORA_SPI_MAX_ATTEMPTS попыток на случай единичного сбоя
+ * SPI (шум, таймаут). Возврат 0 означает, что все попытки исчерпаны -
+ * output/чип могли не получить данные.
+ */
+uint8_t LoRa_readReg(LoRa* _LoRa, uint8_t* address, uint16_t r_length, uint8_t* output, uint16_t w_length);
+uint8_t LoRa_writeReg(LoRa* _LoRa, uint8_t* address, uint16_t r_length, uint8_t* values, uint16_t w_length);
+
+/**
+ * Возвращает 1, если смена режима подтверждена обратным чтением RegOpMode,
+ * 0 - если после всех попыток чип так и не подтвердил переход (current_mode
+ * при этом не обновляется, чтобы software-состояние не разошлось с реальным).
+ */
+uint8_t LoRa_gotoMode(LoRa* _LoRa, int mode);
 uint8_t LoRa_read(LoRa* _LoRa, uint8_t address);
 void LoRa_write(LoRa* _LoRa, uint8_t address, uint8_t value);
 void LoRa_BurstWrite(LoRa* _LoRa, uint8_t address, uint8_t *value, uint8_t length);
+
+/**
+ * @brief Пишет value по адресу address и перечитывает его же для проверки,
+ *        что чип реально принял запись (SPI-успех сам по себе этого не
+ *        гарантирует - например, запись LongRangeMode в RegOpMode игнорируется
+ *        чипом вне Sleep-режима). Повторяет всю пару запись+проверка до
+ *        max_attempts раз.
+ * @retval 1, если совпадение достигнуто, 0 - если нет ни разу за max_attempts.
+ */
+uint8_t LoRa_writeVerified(LoRa* _LoRa, uint8_t address, uint8_t value, uint8_t max_attempts);
+
 uint8_t LoRa_isvalid(LoRa* _LoRa);
 
 void LoRa_setLowDaraRateOptimization(LoRa* _LoRa, uint8_t value);

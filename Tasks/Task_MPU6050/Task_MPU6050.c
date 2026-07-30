@@ -71,6 +71,10 @@ static bool mpu6050_bridge_init_module(void)
         return false;
     }
 
+    if (MPU6050_CalibrateAccel(&g_mpu, MPU6050_GYRO_CALIB_SAMPLES) != HAL_OK) {
+        return false;
+    }
+
     return true;
 }
 
