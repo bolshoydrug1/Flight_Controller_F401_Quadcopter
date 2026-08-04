@@ -39,7 +39,7 @@ static void vTask_hc_sr04_BodyFunction(void *pvParameters)
 		if (xSemaphoreTake(xEchoDoneSemaphore, pdMS_TO_TICKS(40)) == pdTRUE)
 		{
 			height_hc_sr04 = hc_sr04_get_distance(&hc_sr04_m, 25) * ALPHA_IIR + height_hc_sr04 * (1.0f - ALPHA_IIR);
-			Telemetry_SetHeight(height_hc_sr04);
+			Telemetry_SetHeight(height_hc_sr04 / 1000.0f); // мм -> м, под имя height_agl_m
 		}
 
         vTaskDelayUntil(&xLastWakeTime, xFrequency);

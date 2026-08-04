@@ -15,6 +15,9 @@
 static TaskHandle_t xTask_mpu6050Handle = NULL;
 
 #define MPU6050_SAMPLE_PERIOD_MS       1U
+/* Пауза перед первым обращением к датчику от старта задачи - даёт устояться
+ * питанию/тактовому генератору MPU6050 после подачи питания на плату. */
+#define MPU6050_STARTUP_DELAY_MS       100U
 /* Реальная I2C1-транзакция (адресная фаза + 14 байт по DMA на 400кГц) с
  * запасом укладывается в ~0.5мс - 2 такта таймаута оставляют запас, но не
  * дают зависшей транзакции сожрать больше одного периода цикла. */
@@ -51,12 +54,14 @@ static bool mpu6050_bridge_init_module(void)
      * поля g_mpu.* можно задать другими макросами до MPU6050_Init. */
     g_mpu.gyro_fs = MPU6050_GYRO_FS_2000;
     g_mpu.accel_fs = MPU6050_ACCEL_FS_8G;
-    /* DLPF обязателен включённым (не MPU6050_DLPF_260HZ) - иначе внутренний
-     * Fs гироскопа 8кГц, а не 1кГц, и SMPLRT_DIV=0 даст не тот темп. */
-    g_mpu.dlpf_cfg = MPU6050_DLPF_184HZ;
-    /* Sample Rate = 1кГц(GyroOutputRate при включённом DLPF) / (1+0) = 1кГц,
-     * ровно частота цикла задачи. */
-    g_mpu.sample_rate_div = 0;
+    /* DLPF выключен -> GyroOutputRate=8кГц (без цифровой фильтрации, только
+     * встроенный аналоговый фильтр ~256Гц по гироскопу/260Гц по акселю).
+     * ВНИМАНИЕ: это убирает цифровую фильтрацию высокочастотного шума -
+     * если причина "скачущих" показаний в шуме/вибрации, на этой частоте
+     * будет заметнее, а не меньше. */
+    g_mpu.dlpf_cfg = MPU6050_DLPF_260HZ;
+    /* Sample Rate = 8кГц(GyroOutputRate при выключенном DLPF) / (1+1) = 4кГц. */
+    g_mpu.sample_rate_div = 1;
     g_mpu.clock_source = MPU6050_CLOCK_PLL_XGYRO;
 
     if (MPU6050_Init(&g_mpu) != HAL_OK) {
@@ -71,9 +76,9 @@ static bool mpu6050_bridge_init_module(void)
         return false;
     }
 
-    if (MPU6050_CalibrateAccel(&g_mpu, MPU6050_GYRO_CALIB_SAMPLES) != HAL_OK) {
-        return false;
-    }
+//    if (MPU6050_CalibrateAccel(&g_mpu, MPU6050_GYRO_CALIB_SAMPLES) != HAL_OK) {
+//        return false;
+//    }
 
     return true;
 }
@@ -154,6 +159,8 @@ static bool mpu6050_service_calib_request(void)
 // Тело задачи
 static void vTask_mpu6050_BodyFunction(void *pvParameters)
 {
+    vTaskDelay(pdMS_TO_TICKS(MPU6050_STARTUP_DELAY_MS));
+
     while (!mpu6050_bridge_init_module()) {
         vTaskDelay(pdMS_TO_TICKS(MPU6050_INIT_RETRY_DELAY_MS));
     }
